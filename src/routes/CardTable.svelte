@@ -1,10 +1,5 @@
-<script>
-    import Card from './Card.svelte';
-</script>
-
 <div class="table-area">
     <!-- You can put your card elements here later -->
-    <Card />
 </div>
 
 <style>

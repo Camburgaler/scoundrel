@@ -5,23 +5,32 @@
         ASSETS_DECK,
         ASSETS_DIE,
         BYRON_KNOLL,
+        ERROR_ANIMATION_DURATION,
+        INITIAL_DECK_CONTENTS,
         PAINRATIO_EMERALD,
-        VALUE_TO_RANK
+        VALUE_TO_RANK,
+        type CardSuit,
     } from '$lib/constants';
-    import type { AssetRow } from '$lib/types/assets';
+    import ErrorSymbol from '$lib/ErrorSymbol.svelte';
+    import type { AssetRow } from '$lib/interfaces/assets';
+    import type { Card } from '$lib/interfaces/card';
     import { onMount } from 'svelte';
 
+    let deck: { suit: CardSuit; value: number }[] = $state([...INITIAL_DECK_CONTENTS]);
+    let errorSymbols: string[] = $state([]);
+
     let tableE1: HTMLDivElement;
-    let cardSize = { width: 100, height: 145 };
-    let deck: AssetRow[] = [];
-    let cardBack: AssetRow;
-    let die: AssetRow[] = [];
-    let weapon: number = 0;
-    let enemies: AssetRow[] = [];
+    let deckAssets: AssetRow[] = $state([]);
+    let cardBack: AssetRow | undefined = $state();
+    let die: AssetRow[] = $state([]);
+    let weapon: number = $state(0);
+    let enemies: AssetRow[] = $state([]);
+    let cardSize = $state({ width: 100, height: 145 });
+    let room: Card[] = $state([]);
 
     async function loadData() {
         const deck_response = await fetch(ASSETS_DECK + BYRON_KNOLL.replace(' ', '%20'));
-        deck = await deck_response.json();
+        deckAssets = await deck_response.json();
 
         const back_response = await fetch(ASSETS_BACK + ABJIKLAM);
         cardBack = (await back_response.json())[0];
@@ -45,19 +54,60 @@
 
         return () => resize.disconnect();
     });
+
+    function triggerError() {
+        const id = crypto.randomUUID();
+        errorSymbols = [...errorSymbols, id];
+
+        setTimeout(() => {
+            errorSymbols = errorSymbols.filter((e) => e !== id);
+        }, ERROR_ANIMATION_DURATION);
+    }
+
+    function getRoom() {
+        while (room.length < 4) {
+            const index = Math.floor(Math.random() * deck.length);
+            room.push(deck[index]);
+        }
+    }
 </script>
 
 <div bind:this={tableE1} class="table-area">
-    <img
-        src={cardBack?.url + '?cb=' + Math.random()}
-        alt="card back"
+    <!-- deck -->
+    <button
         style="
             width: {cardSize.width}px; 
             height: {cardSize.height}px; 
             object-fit: contain; 
             margin: 6px;
+            background-color: transparent;
+            border: none;
         "
-    />
+        onclick={() => {
+            // if (deck.length === 0) {
+            //     triggerError();
+            // }
+            // getRoom();
+            triggerError();
+        }}
+    >
+        <div class="error-container">
+            {#each errorSymbols as id (id)}
+                <ErrorSymbol />
+            {/each}
+        </div>
+        {#if deck}
+            <img
+                src={cardBack?.url}
+                alt="card back"
+                style="
+                    width: 100%;
+                    height: 100%;
+                "
+            />
+        {/if}
+    </button>
+    <!-- buffer -->
     {#each [0, 1, 2] as _}
         <div
             style="
@@ -68,28 +118,35 @@
             "
         ></div>
     {/each}
+    <!-- current room -->
     {#each [0, 1, 2, 3] as i}
-        <img
-            src={deck[i]?.url + '?cb=' + Math.random()}
-            alt="{VALUE_TO_RANK.get(deck[i]?.value)} of {deck[i]?.suit}"
-            style="
+        {#if deck[i]}
+            <img
+                src={deckAssets[i]?.url}
+                alt="{VALUE_TO_RANK.get(deckAssets[i]?.value)} of {deckAssets[i]?.suit}"
+                style="
                 width: {cardSize.width}px;
                 height: {cardSize.height}px;
                 object-fit: contain;
                 margin: 6px;
                 "
-        />
+            />
+        {/if}
     {/each}
-    <img
-        src={die.find((d) => d.value === 20)?.url + '?cb=' + Math.random()}
-        alt="die showing 20"
-        style="
+    <!-- health -->
+    {#if die}
+        <img
+            src={die.find((d) => d.value === 20)?.url}
+            alt="die showing 20"
+            style="
             width: {cardSize.width}px;
             height: {cardSize.height}px;
             object-fit: contain;
             margin: 6px;
         "
-    />
+        />
+    {/if}
+    <!-- weapon -->
     <div
         style="
             width: {cardSize.width}px;
@@ -100,21 +157,19 @@
     >
         {#if weapon}
             <img
-                src={deck.find((c) => c.value === weapon && c.suit === 'diamonds')?.url +
-                    '?cb=' +
-                    Math.random()}
+                src={deckAssets.find((c) => c.value === weapon && c.suit === 'diamonds')?.url}
                 alt="{weapon} of diamonds"
                 style="
-                width: 100%;
-                height: 100%;
-            "
+                    width: 100%;
+                    height: 100%;
+                "
             />
         {:else}
-            <button on:click={() => (weapon = Math.floor(Math.random() * 9) + 2)}
-                >Roll weapon</button
+            <button onclick={() => (weapon = Math.floor(Math.random() * 9) + 2)}>Roll weapon</button
             >
         {/if}
     </div>
+    <!-- enemies fought with the weapon -->
     {#each [0, 1, 2, 3, 4, 5] as i}
         <div
             style="
@@ -126,7 +181,7 @@
         >
             {#if enemies[i]}
                 <img
-                    src={deck.find((c) => c.id === enemies[i]?.id)?.url + '?cb=' + Math.random()}
+                    src={deckAssets.find((c) => c.id === enemies[i]?.id)?.url}
                     alt="{VALUE_TO_RANK.get(enemies[i]?.value)} of {enemies[i]?.suit}"
                     style="
                 width: 100%;
@@ -135,12 +190,12 @@
                 />
             {:else}
                 <button
-                    on:click={() =>
-                        (enemies[i] = deck.find(
+                    onclick={() =>
+                        (enemies[i] = deckAssets.find(
                             (c) =>
                                 (c.suit == 'spades' || c.suit == 'clubs') &&
-                                c.value === Math.floor(Math.random() * 13) + 1
-                        ))}>Roll enemy {i + 1}</button
+                                c.value === Math.floor(Math.random() * 13) + 1,
+                        )!)}>Roll enemy {i + 1}</button
                 >
             {/if}
         </div>
@@ -163,5 +218,9 @@
         /* margin: 1rem auto; */
         box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.4);
         /* align-items: center; */
+    }
+    .error-container {
+        position: relative;
+        overflow: visible;
     }
 </style>

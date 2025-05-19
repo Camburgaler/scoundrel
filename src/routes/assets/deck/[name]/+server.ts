@@ -1,6 +1,6 @@
 import { GET_DECK, TTRPG_LEGACY_COMMON } from '$lib/constants.js';
+import type { AssetRow } from '$lib/interfaces/assets.js';
 import { pool } from '$lib/neon_client';
-import type { AssetRow } from '$lib/types/assets.js';
 
 function isTtrpgLegacy(name: string): boolean {
     return name.startsWith('TTRPG Legacy');

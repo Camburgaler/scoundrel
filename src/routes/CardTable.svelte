@@ -16,10 +16,11 @@
     import type { Card } from '$lib/interfaces/card';
     import { onMount } from 'svelte';
 
+    let cardTable: HTMLDivElement;
+
+    // initial deck is a full 54-card deck minus the jokers, the red face cards, and the red aces
     let deck: { suit: CardSuit; value: number }[] = $state([...INITIAL_DECK_CONTENTS]);
     let errorSymbols: string[] = $state([]);
-
-    let tableE1: HTMLDivElement;
     let deckAssets: AssetRow[] = $state([]);
     let cardBack: AssetRow | undefined = $state();
     let die: AssetRow[] = $state([]);
@@ -27,6 +28,7 @@
     let enemies: AssetRow[] = $state([]);
     let cardSize = $state({ width: 100, height: 145 });
     let room: Card[] = $state([]);
+    let deckIsHovered = $state(false);
 
     async function loadData() {
         const deck_response = await fetch(ASSETS_DECK + BYRON_KNOLL.replace(' ', '%20'));
@@ -50,7 +52,10 @@
             cardSize = { width: cardWidth, height: cardHeight };
         });
 
-        resize.observe(tableE1);
+        resize.observe(cardTable);
+
+        // randomize the deck
+        deck.sort(() => Math.random() - 0.5);
 
         return () => resize.disconnect();
     });
@@ -66,13 +71,12 @@
 
     function getRoom() {
         while (room.length < 4) {
-            const index = Math.floor(Math.random() * deck.length);
-            room.push(deck[index]);
+            room.push(deck.shift()!);
         }
     }
 </script>
 
-<div bind:this={tableE1} class="table-area">
+<div bind:this={cardTable} class="table-area">
     <!-- deck -->
     <button
         style="
@@ -80,7 +84,7 @@
             height: {cardSize.height}px; 
             object-fit: contain; 
             margin: 6px;
-            background-color: transparent;
+            background-color: {deckIsHovered ? (deck.length > 0 ? '#fff' : '#f00') : 'transparent'};
             border: none;
         "
         onclick={() => {
@@ -89,13 +93,15 @@
             }
             getRoom();
         }}
+        onmouseenter={() => (deckIsHovered = true)}
+        onmouseleave={() => (deckIsHovered = false)}
     >
         <div class="error-container">
             {#each errorSymbols as id (id)}
                 <ErrorSymbol />
             {/each}
         </div>
-        {#if deck && deck.length > 0}
+        {#if deck.length > 0}
             <img
                 src={cardBack?.url}
                 alt="card back"
@@ -104,8 +110,20 @@
                     height: 100%;
                 "
             />
+        {:else}
+            <div
+                style="
+                width: {cardSize.width}px;
+                height: {cardSize.height}px;
+                object-fit: contain;
+                margin: 6px;
+                background-color: #000;
+                opacity: 0.2;
+                "
+            ></div>
         {/if}
     </button>
+
     <!-- buffer -->
     {#each [0, 1, 2] as _}
         <div
@@ -117,11 +135,13 @@
             "
         ></div>
     {/each}
+
     <!-- current room -->
     {#each [0, 1, 2, 3] as i}
         {#if room[i]}
             <img
-                src={deckAssets[i]?.url}
+                src={deckAssets.find((c) => c.suit === room[i]?.suit && c.value === room[i]?.value)
+                    ?.url}
                 alt="{VALUE_TO_RANK.get(deckAssets[i]?.value)} of {deckAssets[i]?.suit}"
                 style="
                 width: {cardSize.width}px;
@@ -137,12 +157,15 @@
                 height: {cardSize.height}px;
                 object-fit: contain;
                 margin: 6px;
-                background-color: #000;
+            background-color: {deckIsHovered && deck[Math.max(i - deck.length, 0)]
+                    ? '#0f0'
+                    : '#000'};
                 opacity: 0.2;
                 "
             ></div>
         {/if}
     {/each}
+
     <!-- health -->
     {#if die}
         <img
@@ -170,6 +193,7 @@
             20
         </div>
     {/if}
+
     <!-- weapon -->
     <div
         style="
@@ -201,6 +225,7 @@
             ></div>
         {/if}
     </div>
+
     <!-- enemies fought with the weapon -->
     {#each [0, 1, 2, 3, 4, 5] as i}
         <div

@@ -8,7 +8,7 @@ function isTtrpgLegacy(name: string): boolean {
 
 export async function GET({ params }) {
     const name = params.name.split('%20');
-    console.log(name);
+    // console.log(name);
 
     let rows: AssetRow[];
 
@@ -25,7 +25,7 @@ export async function GET({ params }) {
         rows = (await pool.query(GET_DECK(name.join(' ')))).rows;
     }
 
-    console.log(rows);
+    // console.log(rows);
 
     return new Response(JSON.stringify(rows));
 }

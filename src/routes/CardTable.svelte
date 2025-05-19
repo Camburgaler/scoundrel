@@ -84,11 +84,10 @@
             border: none;
         "
         onclick={() => {
-            // if (deck.length === 0) {
-            //     triggerError();
-            // }
-            // getRoom();
-            triggerError();
+            if (deck.length === 0) {
+                triggerError();
+            }
+            getRoom();
         }}
     >
         <div class="error-container">
@@ -96,7 +95,7 @@
                 <ErrorSymbol />
             {/each}
         </div>
-        {#if deck}
+        {#if deck && deck.length > 0}
             <img
                 src={cardBack?.url}
                 alt="card back"
@@ -120,7 +119,7 @@
     {/each}
     <!-- current room -->
     {#each [0, 1, 2, 3] as i}
-        {#if deck[i]}
+        {#if room[i]}
             <img
                 src={deckAssets[i]?.url}
                 alt="{VALUE_TO_RANK.get(deckAssets[i]?.value)} of {deckAssets[i]?.suit}"
@@ -131,6 +130,17 @@
                 margin: 6px;
                 "
             />
+        {:else}
+            <div
+                style="
+                width: {cardSize.width}px;
+                height: {cardSize.height}px;
+                object-fit: contain;
+                margin: 6px;
+                background-color: #000;
+                opacity: 0.2;
+                "
+            ></div>
         {/if}
     {/each}
     <!-- health -->
@@ -145,6 +155,20 @@
             margin: 6px;
         "
         />
+    {:else}
+        <!-- TODO: health -->
+        <div
+            style="
+            width: {cardSize.width}px;
+            height: {cardSize.height}px;
+            object-fit: contain;
+            margin: 6px;
+            background-color: #000;
+            opacity: 0.2;
+        "
+        >
+            20
+        </div>
     {/if}
     <!-- weapon -->
     <div
@@ -165,8 +189,16 @@
                 "
             />
         {:else}
-            <button onclick={() => (weapon = Math.floor(Math.random() * 9) + 2)}>Roll weapon</button
-            >
+            <div
+                style="
+                width: {cardSize.width}px;
+                height: {cardSize.height}px;
+                object-fit: contain;
+                margin: 6px;
+                background-color: #000;
+                opacity: 0.2;
+                "
+            ></div>
         {/if}
     </div>
     <!-- enemies fought with the weapon -->
@@ -189,14 +221,16 @@
             "
                 />
             {:else}
-                <button
-                    onclick={() =>
-                        (enemies[i] = deckAssets.find(
-                            (c) =>
-                                (c.suit == 'spades' || c.suit == 'clubs') &&
-                                c.value === Math.floor(Math.random() * 13) + 1,
-                        )!)}>Roll enemy {i + 1}</button
-                >
+                <div
+                    style="
+                width: {cardSize.width}px;
+                height: {cardSize.height}px;
+                object-fit: contain;
+                margin: 6px;
+                background-color: #000;
+                opacity: 0.2;
+                "
+                ></div>
             {/if}
         </div>
     {/each}

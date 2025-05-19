@@ -212,14 +212,44 @@
             "
         >
             {#if enemies[i]}
-                <img
-                    src={deckAssets.find((c) => c.id === enemies[i]?.id)?.url}
-                    alt="{VALUE_TO_RANK.get(enemies[i]?.value)} of {enemies[i]?.suit}"
+                <div
+                    class="image-container"
                     style="
+                    height: 100%; 
+                    width: 100%;
+                    object-fit: contain;
+                    margin: 6px;
+                    "
+                >
+                    <img
+                        src={deckAssets.find((c) => c.id === enemies[i]?.id)?.url}
+                        alt="{VALUE_TO_RANK.get(enemies[i]?.value)} of {enemies[i]?.suit}"
+                        style="
                 width: 100%;
                 height: 100%;
             "
-                />
+                    />
+                    <svg class="x-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
+                        <line
+                            x1="0"
+                            y1="0"
+                            x2="100"
+                            y2="100"
+                            stroke="red"
+                            stroke-width="10"
+                            stroke-opacity="0.5"
+                        />
+                        <line
+                            x1="100"
+                            y1="0"
+                            x2="0"
+                            y2="100"
+                            stroke="red"
+                            stroke-width="10"
+                            stroke-opacity="0.5"
+                        />
+                    </svg>
+                </div>
             {:else}
                 <div
                     style="
@@ -253,8 +283,27 @@
         box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.4);
         /* align-items: center; */
     }
+
     .error-container {
         position: relative;
         overflow: visible;
+    }
+
+    .image-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .image-container img {
+        display: block;
+    }
+
+    .x-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
     }
 </style>

@@ -168,6 +168,13 @@
                     : 'transparent'};
                 border: none;
                 "
+                onclick={() => {
+                    if (weaponIsHovered) {
+                        weapon = room[i].value;
+                        room = room.filter((_, j) => j !== i);
+                        weaponIsHovered = 0;
+                    }
+                }}
             >
                 <img
                     src={deckAssets.find(
@@ -252,7 +259,7 @@
         height: {cardSize.height}px;
         object-fit: contain;
         margin: 6px;
-        background-color: {weaponIsHovered ? 'rgba(0, 255, 0, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
+        background-color: {weaponIsHovered ? 'rgba(0, 255, 0, 0.2)' : 'transparent'};
         "
     >
         {#if weapon}

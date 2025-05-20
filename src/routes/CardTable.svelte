@@ -5,77 +5,265 @@
         ASSETS_DECK,
         ASSETS_DIE,
         BYRON_KNOLL,
-        ERROR_ANIMATION_DURATION,
         INITIAL_DECK_CONTENTS,
         PAINRATIO_EMERALD,
+        VALUE_TO_DAMAGE,
         VALUE_TO_RANK,
-        type CardSuit,
     } from '$lib/constants';
-    import ErrorSymbol from '$lib/ErrorSymbol.svelte';
     import type { AssetRow } from '$lib/interfaces/assets';
     import type { Card } from '$lib/interfaces/card';
     import { onMount } from 'svelte';
 
-    let cardTable: HTMLDivElement;
+    const MARGIN = 6;
+    const MAX_HEALTH = 20;
+    const TRANSPARENT = 'transparent';
+    const BLACK_BACKGROUND = 'rgba(0, 0, 0, 0.2)';
+    const WHITE_BACKGROUND = 'rgba(255, 255, 255, 0.2)';
+    const RED_BACKGROUND = 'rgba(255, 0, 0, 0.2)';
+    const GREEN_BACKGROUND = 'rgba(0, 255, 0, 0.2)';
 
-    // initial deck is a full 54-card deck minus the jokers, the red face cards, and the red aces
-    let deck: { suit: CardSuit; value: number }[] = $state([...INITIAL_DECK_CONTENTS]);
-    let errorSymbols: string[] = $state([]);
-    let deckAssets: AssetRow[] = $state([]);
-    let cardBack: AssetRow | undefined = $state();
-    let die: AssetRow[] = $state([]);
-    let weapon: number = $state(0);
-    let enemies: AssetRow[] = $state([]);
+    // Table
+    let cardTable: HTMLDivElement;
     let cardSize = $state({ width: 100, height: 145 });
-    let room: Card[] = $state([]);
-    let deckIsHovered = $state(false);
-    let monsterIsHovered = $state(0);
-    let weaponIsHovered = $state(0);
-    let potionIsHovered = $state(0);
+
+    // Assets
+    let deckAssets: AssetRow[] = $state([]);
+    let cardBackAsset: AssetRow | undefined = $state();
+    let dieAssets: AssetRow[] = $state([]);
+
+    // Card States
+    // initial deck is a full 54-card deck minus the jokers, the red face cards, and the red aces
+    let deck: Card[] = $state([...INITIAL_DECK_CONTENTS]);
+    let room: Card[] = $state([]); // cards in the room
+    let weapon: number = $state(0);
+    let defeatedMonsters: Card[] = $state([]);
+
+    // Hovered States
+    let monsterHovered = $state(0); // (room index + 1) of the monster
+    let roomWeaponHovered = $state(0); // (room index + 1) of the weapon
+    let potionHovered = $state(0); // (room index + 1) of the potion
+    let equippedWeaponIsHovered = $state(false); // whether the equipped weapon is hovered
+
+    // Game States
+    let isGameStarted = $state(false); // whether the game has started
+    let health = $state(20); // player health
+    let isPotionUsed = $state(false); // whether a potion has been used in this room
+    let ranFromPreviousRoom = $state(false); // whether the player ran from the previous room
+
+    const isThisRoomCardHovered = (index: number) => {
+        return (
+            (monsterHovered && monsterHovered - 1 === index) ||
+            (roomWeaponHovered && roomWeaponHovered - 1 === index) ||
+            (potionHovered && potionHovered - 1 === index)
+        );
+    };
 
     async function loadData() {
+        console.log('loading data...');
         const deck_response = await fetch(ASSETS_DECK + BYRON_KNOLL.replace(' ', '%20'));
         deckAssets = await deck_response.json();
 
         const back_response = await fetch(ASSETS_BACK + ABJIKLAM);
-        cardBack = (await back_response.json())[0];
+        cardBackAsset = (await back_response.json())[0];
 
         const die_response = await fetch(ASSETS_DIE + PAINRATIO_EMERALD.replace(' ', '%20'));
-        die = await die_response.json();
+        dieAssets = await die_response.json();
     }
 
     onMount(() => {
+        console.log('mounting...');
         loadData();
 
         const resize = new ResizeObserver(([entry]) => {
-            const { width } = entry.contentRect;
-            const cardWidth = width / 8 - 12;
-            const cardHeight = cardWidth * 1.45;
+            console.log('resizing...');
+            const { width, height } = entry.contentRect;
+            const ratio = width / height;
+
+            const cardWidth =
+                ratio < 2.75
+                    ? width / 8 - MARGIN * 2
+                    : (height / 2 - MARGIN * 2 - height / 10) / 1.45;
+            const cardHeight =
+                ratio < 2.75 ? cardWidth * 1.45 : height / 2 - MARGIN * 2 - height / 10;
 
             cardSize = { width: cardWidth, height: cardHeight };
         });
 
         resize.observe(cardTable);
 
-        // randomize the deck
-        deck.sort(() => Math.random() - 0.5);
-
         return () => resize.disconnect();
     });
 
-    function triggerError() {
-        const id = crypto.randomUUID();
-        errorSymbols = [...errorSymbols, id];
+    // function triggerError() {
+    //     const id = crypto.randomUUID();
+    //     errorSymbols = [...errorSymbols, id];
 
-        setTimeout(() => {
-            errorSymbols = errorSymbols.filter((e) => e !== id);
-        }, ERROR_ANIMATION_DURATION);
-    }
+    //     setTimeout(() => {
+    //         errorSymbols = errorSymbols.filter((e) => e !== id);
+    //     }, ERROR_ANIMATION_DURATION);
+    // }
 
     function getRoom() {
         while (room.length < 4) {
+            console.log('filling room...');
+            // add animation here for reflling the room
+            //     spawn a card back on top of the deck
+            //     simulataneously
+            //         slide the card back into the its spot in the room
+            //         flip the card back over to reveal the card
             room.push(deck.shift()!);
         }
+        isPotionUsed = false;
+    }
+
+    function canUseWeapon(monster: Card): boolean {
+        console.log('canUseWeapon?');
+        // if there are defeated monsters,
+        //     then return whether the monster's value is less than the value of the last defeated monster
+        // else
+        //     return whether the equipped weapon is greater than 0
+        return defeatedMonsters.length
+            ? VALUE_TO_DAMAGE.get(monster.value)! <
+                  VALUE_TO_DAMAGE.get(defeatedMonsters[defeatedMonsters.length - 1].value)!
+            : weapon > 0;
+    }
+
+    function getEffectiveWeaponValue(monsterIndex: number): number {
+        return canUseWeapon(room[monsterIndex])
+            ? defeatedMonsters.length > 0
+                ? Math.min(
+                      weapon,
+                      VALUE_TO_DAMAGE.get(defeatedMonsters[defeatedMonsters.length - 1].value)!,
+                  )
+                : weapon
+            : 0;
+    }
+
+    function startGame() {
+        console.log('starting game...');
+
+        // reset the deck
+        deck = [...INITIAL_DECK_CONTENTS];
+        deck.sort(() => Math.random() - 0.5);
+        // add animation here to have entire deck quickly slide in from off screen
+        // add animation here for shuffling the deck
+        //     deck slides into center of screen
+        //     spawn another card back on top of the deck
+        //     horizontally slide both card backs away from each other slightly
+        //     spawn another card back on top of the right card back
+        //     slide the third card back into the center between the two "halves" of the deck
+        //     persist the third card back until the deck is fully shuffled
+        //     repeat the process 43 more times for the rest of the deck, alternating between the two "halves", deleting each card back once its animation is complete
+        //     on the last iterations from each "half", the first and second card back will be deleted after their animations are complete
+        //     slide the third card back to the deck's original position
+        //     simultaneously
+        //         fade out the third card back
+        //         fade in the actual deck asset
+
+        // reset room
+        room = [];
+
+        // reset weapon
+        weapon = 0;
+
+        // reset defeated monsters
+        defeatedMonsters = [];
+
+        // reset hovered states
+        monsterHovered = 0;
+        roomWeaponHovered = 0;
+        potionHovered = 0;
+        equippedWeaponIsHovered = false;
+
+        // reset health
+        health = 20;
+
+        // reset isPotionUsed
+        isPotionUsed = false;
+
+        // reset ranFromPreviousRoom
+        ranFromPreviousRoom = false;
+
+        getRoom();
+        isGameStarted = true;
+    }
+
+    function equipWeapon(weaponIndex: number) {
+        console.log('equipping weapon...');
+        weapon = room[weaponIndex].value;
+        room = room.filter((_, j) => j !== weaponIndex);
+        roomWeaponHovered = 0;
+        ranFromPreviousRoom = false;
+        // add animation here to equip the weapon
+        //     slide weapon card from room to weapon slot
+    }
+
+    function drinkPotion(potionIndex: number) {
+        console.log('drinking potion...');
+        if (!isPotionUsed) {
+            health = Math.min(health + room[potionIndex].value, MAX_HEALTH);
+        }
+        room = room.filter((_, j) => j !== potionIndex);
+        isPotionUsed = true;
+        potionHovered = 0;
+        ranFromPreviousRoom = false;
+        // add animation here to drink the potion
+        //     slide potion card from room to health
+        //     simultaneously
+        //         shrink card
+        //         fade out card
+    }
+
+    function fightMonster(monsterIndex: number) {
+        console.log('attacking monster...');
+        if (
+            getEffectiveWeaponValue(monsterIndex) < VALUE_TO_DAMAGE.get(room[monsterIndex].value)!
+        ) {
+            health = Math.max(
+                health -
+                    Math.abs(
+                        VALUE_TO_DAMAGE.get(room[monsterIndex].value)! -
+                            getEffectiveWeaponValue(monsterIndex),
+                    ),
+                0,
+            );
+        }
+        if (weapon && canUseWeapon(room[monsterIndex])) {
+            defeatedMonsters.push(room[monsterIndex]);
+        }
+        room = room.filter((_, j) => j !== monsterIndex);
+        monsterHovered = 0;
+        if (health === 0) {
+            isGameStarted = false;
+        }
+        ranFromPreviousRoom = false;
+    }
+
+    function interactWithRoom(index: number) {
+        if (roomWeaponHovered) {
+            equipWeapon(index);
+        }
+        if (potionHovered) {
+            drinkPotion(index);
+        }
+        if (monsterHovered) {
+            fightMonster(index);
+        }
+        if (room.length === 1) {
+            getRoom();
+        }
+    }
+
+    function findDeckAssetByCard(card: Card): AssetRow | undefined {
+        return deckAssets.find(
+            (asset: AssetRow) => asset.suit === card.suit && asset.value === card.value,
+        );
+    }
+
+    function isHoveredMonsterDamageGreaterThanWeapon(): boolean {
+        return (
+            monsterHovered > 0 && VALUE_TO_DAMAGE.get(room[monsterHovered - 1].value)! - weapon > 0
+        );
     }
 </script>
 
@@ -86,58 +274,54 @@
         width: {cardSize.width}px; 
         height: {cardSize.height}px; 
         object-fit: contain; 
-        margin: 6px;
-        background-color: {deckIsHovered
-            ? deck.length > 0
-                ? 'rgba(255, 255, 255, 0.2)'
-                : 'rgba(255, 0, 0, 0.2)'
-            : 'transparent'};
+        margin: {MARGIN}px;
+        background-color: {TRANSPARENT};
         border: none;
         "
     >
-        <button
-            style="
+        {#if isGameStarted}
+            <button
+                style="
             width: 100%;
             height: 100%; 
-            background-color: transparent;
+            background-color: {TRANSPARENT};
             border: none;
             "
-            onclick={() => {
-                if (deck.length === 0) {
-                    triggerError();
-                }
-                getRoom();
-            }}
-            onmouseenter={() => (deckIsHovered = true)}
-            onmouseleave={() => (deckIsHovered = false)}
-        >
-            <div class="error-container">
-                {#each errorSymbols as id (id)}
-                    <ErrorSymbol />
-                {/each}
-            </div>
-            {#if deck.length > 0}
-                <img
-                    src={cardBack?.url}
-                    alt="card back"
-                    style="
+            >
+                {#if deck.length > 0}
+                    <img
+                        src={cardBackAsset?.url}
+                        alt="card back"
+                        style="
                     width: 100%;
                     height: 100%;
                     "
-                />
-            {:else}
-                <div
-                    style="
+                    />
+                {:else}
+                    <div
+                        style="
                     width: {cardSize.width}px;
                     height: {cardSize.height}px;
                     object-fit: contain;
-                    margin: 6px;
+                    margin: {MARGIN}px;
                     background-color: #000;
                     opacity: 0.2;
                     "
-                ></div>
-            {/if}
-        </button>
+                    ></div>
+                {/if}
+            </button>
+        {:else}
+            <button
+                style="
+            width: 100%;
+            height: 100%; 
+            background-color: {WHITE_BACKGROUND};
+            "
+                onclick={startGame}
+            >
+                {health == 0 ? 'TRY AGAIN?' : 'START GAME'}
+            </button>
+        {/if}
     </div>
 
     <!-- buffer -->
@@ -147,108 +331,97 @@
             width: {cardSize.width}px; 
             height: {cardSize.height}px; 
             object-fit: contain; 
-            margin: 6px;
+            margin: {MARGIN}px;
             "
         ></div>
     {/each}
 
     <!-- current room -->
     {#each [0, 1, 2, 3] as i}
-        {#if room[i]}
-            <button
-                style="
+        <div
+            style="
                 width: {cardSize.width}px;
                 height: {cardSize.height}px;
                 object-fit: contain;
-                margin: 6px;
-                background-color: {(monsterIsHovered && monsterIsHovered - 1 === i) ||
-                (weaponIsHovered && weaponIsHovered - 1 === i) ||
-                (potionIsHovered && potionIsHovered - 1 === i)
-                    ? 'rgba(255, 255, 255, 0.2)'
-                    : 'transparent'};
-                border: none;
+                margin: {MARGIN}px;
+                background-color: {room[i] ? TRANSPARENT : BLACK_BACKGROUND};
                 "
-                onclick={() => {
-                    if (weaponIsHovered) {
-                        weapon = room[i].value;
-                        room = room.filter((_, j) => j !== i);
-                        weaponIsHovered = 0;
-                    }
-                }}
-            >
-                <img
-                    src={deckAssets.find(
-                        (c) => c.suit === room[i]?.suit && c.value === room[i]?.value,
-                    )?.url}
-                    alt="{VALUE_TO_RANK.get(deckAssets[i]?.value)} of {deckAssets[i]?.suit}"
+        >
+            {#if room[i]}
+                <button
                     style="
+                    width: 100%;
+                    height: 100%;
+                    background-color: {isThisRoomCardHovered(i)
+                        ? potionHovered && isPotionUsed
+                            ? RED_BACKGROUND
+                            : WHITE_BACKGROUND
+                        : TRANSPARENT};
+                    border: none;
+                    "
+                    onclick={() => interactWithRoom(i)}
+                >
+                    <img
+                        src={findDeckAssetByCard(room[i])?.url}
+                        alt="{VALUE_TO_RANK.get(deckAssets[i]?.value)} of {deckAssets[i]?.suit}"
+                        style="
                         width: 100%;
                         height: 100%;
-                    "
-                    onmouseenter={() => {
-                        monsterIsHovered = ['spades', 'clubs'].includes(room[i].suit) ? i + 1 : 0;
-                        weaponIsHovered = room[i].suit === 'diamonds' ? i + 1 : 0;
-                        potionIsHovered = room[i].suit === 'hearts' ? i + 1 : 0;
-                    }}
-                    onmouseleave={() => {
-                        monsterIsHovered = 0;
-                        weaponIsHovered = 0;
-                        potionIsHovered = 0;
-                    }}
-                /></button
-            >
-        {:else}
-            <div
-                style="
-                width: {cardSize.width}px;
-                height: {cardSize.height}px;
-                object-fit: contain;
-                margin: 6px;
-                background-color: {deckIsHovered && deck[Math.max(i - deck.length, 0)]
-                    ? '#0f0'
-                    : '#000'};
-                opacity: 0.2;
-                "
-            ></div>
-        {/if}
+                        "
+                        onmouseenter={() => {
+                            monsterHovered = ['spades', 'clubs'].includes(room[i].suit) ? i + 1 : 0;
+                            roomWeaponHovered = room[i].suit === 'diamonds' ? i + 1 : 0;
+                            potionHovered = room[i].suit === 'hearts' ? i + 1 : 0;
+                        }}
+                        onmouseleave={() => {
+                            monsterHovered = 0;
+                            roomWeaponHovered = 0;
+                            potionHovered = 0;
+                        }}
+                    /></button
+                >
+            {/if}
+        </div>
     {/each}
 
+    <hr style="width: 100%; background-color: #fff; height: 1px; border: none; " />
+
     <!-- health -->
-    {#if die}
+    {#if dieAssets && deckAssets.find((asset: AssetRow) => asset.suit === 'jokers')}
         <div
             style="
             width: {cardSize.width}px;
             height: {cardSize.height}px;
             object-fit: contain;
-            margin: 6px;
-            background-color: {monsterIsHovered
-                ? 'rgba(255, 0, 0, 0.2)'
-                : potionIsHovered
-                  ? 'rgba(0, 255, 0, 0.2)'
-                  : 'transparent'};
+            margin: {MARGIN}px;
+            background-color: {isHoveredMonsterDamageGreaterThanWeapon()
+                ? RED_BACKGROUND
+                : potionHovered && !isPotionUsed
+                  ? GREEN_BACKGROUND
+                  : TRANSPARENT};
             "
         >
             <img
-                src={die.find((d) => d.value === 20)?.url}
-                alt="die showing 20"
+                src={health === 0
+                    ? deckAssets.find((asset: AssetRow) => asset.suit === 'jokers')?.url
+                    : dieAssets.find((d) => d.value === health)?.url}
+                alt="{health} health"
                 style="
                 width: 100%;
                 "
             />
         </div>
     {:else}
-        <!-- TODO: health logic -->
         <div
             style="
             width: {cardSize.width}px;
             height: {cardSize.height}px;
             object-fit: contain;
-            margin: 6px;
-            background-color: #000;
-            opacity: 0.2;
+            margin: {MARGIN}px;
+            background-color: {BLACK_BACKGROUND};
             "
         >
-            20
+            {health}
         </div>
     {/if}
 
@@ -258,19 +431,43 @@
         width: {cardSize.width}px;
         height: {cardSize.height}px;
         object-fit: contain;
-        margin: 6px;
-        background-color: {weaponIsHovered ? 'rgba(0, 255, 0, 0.2)' : 'transparent'};
+        margin: {MARGIN}px;
+        background-color: {weapon
+            ? equippedWeaponIsHovered || (monsterHovered && canUseWeapon(room[monsterHovered - 1]))
+                ? RED_BACKGROUND
+                : TRANSPARENT
+            : roomWeaponHovered
+              ? GREEN_BACKGROUND
+              : BLACK_BACKGROUND};
         "
     >
         {#if weapon}
-            <img
-                src={deckAssets.find((c) => c.value === weapon && c.suit === 'diamonds')?.url}
-                alt="{weapon} of diamonds"
+            <button
                 style="
                 width: 100%;
                 height: 100%;
+                background-color: transparent;
+                border: none;
                 "
-            />
+                onclick={() => {
+                    console.log('discarding weapon...');
+                    weapon = 0;
+                    while (defeatedMonsters.length > 0) {
+                        defeatedMonsters.pop();
+                    }
+                }}
+            >
+                <img
+                    src={deckAssets.find((c) => c.value === weapon && c.suit === 'diamonds')?.url}
+                    alt="{weapon} of diamonds"
+                    style="
+                width: 100%;
+                height: 100%;
+                "
+                    onmouseenter={() => (equippedWeaponIsHovered = true)}
+                    onmouseleave={() => (equippedWeaponIsHovered = false)}
+                />
+            </button>
         {/if}
     </div>
 
@@ -281,10 +478,10 @@
             width: {cardSize.width}px;
             height: {cardSize.height}px;
             object-fit: contain;
-            margin: 6px;
+            margin: {MARGIN}px;
             "
         >
-            {#if enemies[i]}
+            {#if defeatedMonsters[defeatedMonsters.length - 1 - i]}
                 <div
                     class="image-container"
                     style="
@@ -293,8 +490,15 @@
                     "
                 >
                     <img
-                        src={deckAssets.find((c) => c.id === enemies[i]?.id)?.url}
-                        alt="{VALUE_TO_RANK.get(enemies[i]?.value)} of {enemies[i]?.suit}"
+                        src={deckAssets.find(
+                            (c) =>
+                                c.value ===
+                                    defeatedMonsters[defeatedMonsters.length - 1 - i]?.value &&
+                                c.suit === defeatedMonsters[defeatedMonsters.length - 1 - i]?.suit,
+                        )?.url}
+                        alt="{VALUE_TO_RANK.get(
+                            defeatedMonsters[defeatedMonsters.length - 1 - i]?.value,
+                        )} of {defeatedMonsters[defeatedMonsters.length - 1 - i]?.suit}"
                         style="
                         width: 100%;
                         height: 100%;
@@ -333,6 +537,24 @@
             {/if}
         </div>
     {/each}
+    <button
+        style="
+        width: 100%;
+        height: 10%;
+        "
+        onclick={() => {
+            console.log('running from room...');
+            while (room.length > 0) {
+                ranFromPreviousRoom = true;
+                const randomIndex = Math.floor(Math.random() * room.length);
+                deck.push(room[randomIndex]);
+                room.splice(randomIndex, 1);
+            }
+            getRoom();
+        }}
+        disabled={ranFromPreviousRoom || room.length < 4}
+        >RUN!
+    </button>
 </div>
 
 <style>
@@ -351,11 +573,6 @@
         /* margin: 1rem auto; */
         box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.4);
         /* align-items: center; */
-    }
-
-    .error-container {
-        position: relative;
-        overflow: visible;
     }
 
     .image-container {

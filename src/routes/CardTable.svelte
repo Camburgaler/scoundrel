@@ -42,7 +42,8 @@
     let monsterHovered = $state(0); // (room index + 1) of the monster
     let roomWeaponHovered = $state(0); // (room index + 1) of the weapon
     let potionHovered = $state(0); // (room index + 1) of the potion
-    let equippedWeaponIsHovered = $state(false); // whether the equipped weapon is hovered
+    let isEquippedWeaponHovered = $state(false); // whether the equipped weapon is hovered
+    let isRunHovered = $state(false); // whether the run button is hovered
 
     // Game States
     let isGameStarted = $state(false); // whether the game has started
@@ -173,7 +174,7 @@
         monsterHovered = 0;
         roomWeaponHovered = 0;
         potionHovered = 0;
-        equippedWeaponIsHovered = false;
+        isEquippedWeaponHovered = false;
 
         // reset health
         health = 20;
@@ -189,6 +190,9 @@
     }
 
     function equipWeapon(weaponIndex: number) {
+        if (weapon > 0) {
+            return;
+        }
         console.log('equipping weapon...');
         weapon = room[weaponIndex].value;
         room = room.filter((_, j) => j !== weaponIndex);
@@ -214,19 +218,23 @@
         //         fade out card
     }
 
+    function getNewHealth(monsterIndex: number): number {
+        return Math.max(
+            health -
+                Math.abs(
+                    VALUE_TO_DAMAGE.get(room[monsterIndex].value)! -
+                        getEffectiveWeaponValue(monsterIndex),
+                ),
+            0,
+        );
+    }
+
     function fightMonster(monsterIndex: number) {
         console.log('attacking monster...');
         if (
             getEffectiveWeaponValue(monsterIndex) < VALUE_TO_DAMAGE.get(room[monsterIndex].value)!
         ) {
-            health = Math.max(
-                health -
-                    Math.abs(
-                        VALUE_TO_DAMAGE.get(room[monsterIndex].value)! -
-                            getEffectiveWeaponValue(monsterIndex),
-                    ),
-                0,
-            );
+            health = getNewHealth(monsterIndex);
         }
         if (weapon && canUseWeapon(room[monsterIndex])) {
             defeatedMonsters.push(room[monsterIndex]);
@@ -264,6 +272,42 @@
         return (
             monsterHovered > 0 && VALUE_TO_DAMAGE.get(room[monsterHovered - 1].value)! - weapon > 0
         );
+    }
+
+    function interpretMove(): string {
+        if (monsterHovered) {
+            let newHealth = health;
+            if (
+                getEffectiveWeaponValue(monsterHovered - 1) <
+                VALUE_TO_DAMAGE.get(room[monsterHovered - 1].value)!
+            ) {
+                newHealth = getNewHealth(monsterHovered - 1);
+            }
+            return (
+                'DAMAGE: ' +
+                Math.min(
+                    health - newHealth,
+                    VALUE_TO_DAMAGE.get(room[monsterHovered - 1].value)!,
+                ).toString() +
+                (newHealth === 0 ? ' (THIS WILL KILL YOU)' : '')
+            );
+        }
+        if (roomWeaponHovered) {
+            return weapon > 0 ? 'DISCARD CURRENT WEAPON TO EQUIP THIS ONE' : 'EQUIP WEAPON';
+        }
+        if (isEquippedWeaponHovered) {
+            return 'DISCARD WEAPON';
+        }
+        if (potionHovered) {
+            return isPotionUsed
+                ? 'DISCARD POTION'
+                : 'RECOVER: ' +
+                      Math.min(MAX_HEALTH - health, room[potionHovered - 1].value).toString();
+        }
+        if (isRunHovered && isGameStarted) {
+            return ranFromPreviousRoom ? 'YOU ARE STUCK HERE' : 'RUN FROM THIS ROOM';
+        }
+        return '';
     }
 </script>
 
@@ -324,8 +368,20 @@
         {/if}
     </div>
 
+    <!-- information -->
+    <div
+        style="
+            width: {cardSize.width}px; 
+            height: {cardSize.height}px; 
+            object-fit: contain; 
+            margin: {MARGIN}px;
+            "
+    >
+        {interpretMove()}
+    </div>
+
     <!-- buffer -->
-    {#each [0, 1, 2] as _}
+    {#each [0, 1] as _}
         <div
             style="
             width: {cardSize.width}px; 
@@ -353,7 +409,7 @@
                     width: 100%;
                     height: 100%;
                     background-color: {isThisRoomCardHovered(i)
-                        ? potionHovered && isPotionUsed
+                        ? (potionHovered && isPotionUsed) || (roomWeaponHovered && weapon > 0)
                             ? RED_BACKGROUND
                             : WHITE_BACKGROUND
                         : TRANSPARENT};
@@ -433,7 +489,7 @@
         object-fit: contain;
         margin: {MARGIN}px;
         background-color: {weapon
-            ? equippedWeaponIsHovered || (monsterHovered && canUseWeapon(room[monsterHovered - 1]))
+            ? isEquippedWeaponHovered || (monsterHovered && canUseWeapon(room[monsterHovered - 1]))
                 ? RED_BACKGROUND
                 : TRANSPARENT
             : roomWeaponHovered
@@ -455,6 +511,7 @@
                     while (defeatedMonsters.length > 0) {
                         defeatedMonsters.pop();
                     }
+                    isEquippedWeaponHovered = false;
                 }}
             >
                 <img
@@ -464,8 +521,8 @@
                 width: 100%;
                 height: 100%;
                 "
-                    onmouseenter={() => (equippedWeaponIsHovered = true)}
-                    onmouseleave={() => (equippedWeaponIsHovered = false)}
+                    onmouseenter={() => (isEquippedWeaponHovered = true)}
+                    onmouseleave={() => (isEquippedWeaponHovered = false)}
                 />
             </button>
         {/if}
@@ -553,6 +610,8 @@
             getRoom();
         }}
         disabled={ranFromPreviousRoom || room.length < 4}
+        onmouseenter={() => (isRunHovered = true)}
+        onmouseleave={() => (isRunHovered = false)}
         >RUN!
     </button>
 </div>

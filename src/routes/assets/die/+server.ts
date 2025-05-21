@@ -6,7 +6,7 @@ export async function GET() {
 
     const names: string[] = result.rows.map((row) => row.collection);
 
-    console.log(names);
+    // console.log(names);
 
     return new Response(JSON.stringify(names));
 }

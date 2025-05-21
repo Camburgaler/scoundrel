@@ -17,7 +17,7 @@
     // Assets
     let tableAsset: AssetRow | undefined = $state(undefined);
     let tableNames: string[] = $state([]);
-    let backAsset: AssetRow | undefined = $state(undefined);
+    let cardBackAsset: AssetRow | undefined = $state(undefined);
     let backNames: string[] = $state([]);
     let deckAssets: AssetRow[] = $state([]);
     let deckNames: string[] = $state([]);
@@ -38,7 +38,9 @@
     }
 
     async function loadBackAsset() {
-        backAsset = await getAssetsWithLocalCache(ASSETS_BACK + selectedBack.replace(' ', '%20'));
+        cardBackAsset = await getAssetsWithLocalCache(
+            ASSETS_BACK + selectedBack.replace(' ', '%20'),
+        );
     }
 
     async function loadDeckAsset() {
@@ -166,7 +168,7 @@
         </p>
     </div>
 
-    <CardTable />
+    <CardTable {deckAssets} {cardBackAsset} {dieAssets} />
 </div>
 
 <style>

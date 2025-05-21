@@ -1,18 +1,7 @@
 <script lang="ts">
-    import {
-        ABJIKLAM,
-        ASSETS_BACK,
-        ASSETS_DECK,
-        ASSETS_DIE,
-        BYRON_KNOLL,
-        INITIAL_DECK_CONTENTS,
-        PAINRATIO_EMERALD,
-        VALUE_TO_DAMAGE,
-        VALUE_TO_RANK,
-    } from '$lib/constants';
+    import { INITIAL_DECK_CONTENTS, VALUE_TO_DAMAGE, VALUE_TO_RANK } from '$lib/constants';
     import type { AssetRow } from '$lib/interfaces/assets';
     import type { Card } from '$lib/interfaces/card';
-    import { getAssetsWithLocalCache } from '$lib/utils/cache';
     import { onMount } from 'svelte';
 
     const MARGIN = 6;
@@ -23,14 +12,17 @@
     const RED_BACKGROUND = 'rgba(255, 0, 0, 0.2)';
     const GREEN_BACKGROUND = 'rgba(0, 255, 0, 0.2)';
 
+    // Props
+    let { deckAssets, cardBackAsset, dieAssets } = $props();
+
     // Table
     let cardTable: HTMLDivElement;
     let cardSize = $state({ width: 100, height: 145 });
 
     // Assets
-    let deckAssets: AssetRow[] = $state([]);
-    let cardBackAsset: AssetRow | undefined = $state();
-    let dieAssets: AssetRow[] = $state([]);
+    // let deckAssets: AssetRow[] = props.deckAssets;
+    // let cardBackAsset: AssetRow = props.cardBackAsset;
+    // let dieAssets: AssetRow[] = props.dieAssets;
 
     // Card States
     // initial deck is a full 54-card deck minus the jokers, the red face cards, and the red aces
@@ -61,13 +53,11 @@
     };
 
     async function loadData() {
-        deckAssets = await getAssetsWithLocalCache(ASSETS_DECK + BYRON_KNOLL.replace(' ', '%20'));
-
-        cardBackAsset = await getAssetsWithLocalCache(ASSETS_BACK + ABJIKLAM);
-
-        dieAssets = await getAssetsWithLocalCache(
-            ASSETS_DIE + PAINRATIO_EMERALD.replace(' ', '%20'),
-        );
+        // deckAssets = await getAssetsWithLocalCache(ASSETS_DECK + BYRON_KNOLL.replace(' ', '%20'));
+        // cardBackAsset = await getAssetsWithLocalCache(ASSETS_BACK + ABJIKLAM);
+        // dieAssets = await getAssetsWithLocalCache(
+        //     ASSETS_DIE + PAINRATIO_EMERALD.replace(' ', '%20'),
+        // );
     }
 
     onMount(() => {
@@ -472,6 +462,7 @@
             margin: {MARGIN}px;
             background-color: {BLACK_BACKGROUND};
             border-radius: 1rem;
+            font-size: 2rem;
             "
         >
             {health}

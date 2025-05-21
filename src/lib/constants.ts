@@ -113,6 +113,7 @@ export const GET_BACK = (name: string) =>
     "SELECT * FROM assets WHERE type = 'card_back' AND collection = '" + name + "'";
 export const GET_TABLE = (name: string) =>
     "SELECT * FROM assets WHERE type = 'table' AND collection = '" + name + "'";
+export const GET_TABLE_NAMES = "SELECT DISTINCT collection FROM assets WHERE type = 'table'";
 export const GET_DIE = (name: string) =>
     "SELECT * FROM assets WHERE type = 'die' AND collection = '" + name + "'";
 export const GET_SOUNDS = (collection: string) =>

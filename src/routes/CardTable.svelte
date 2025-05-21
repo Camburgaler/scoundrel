@@ -63,7 +63,7 @@
     async function loadData() {
         deckAssets = await getAssetsWithLocalCache(ASSETS_DECK + BYRON_KNOLL.replace(' ', '%20'));
 
-        cardBackAsset = (await getAssetsWithLocalCache(ASSETS_BACK + ABJIKLAM))[0];
+        cardBackAsset = await getAssetsWithLocalCache(ASSETS_BACK + ABJIKLAM);
 
         dieAssets = await getAssetsWithLocalCache(
             ASSETS_DIE + PAINRATIO_EMERALD.replace(' ', '%20'),

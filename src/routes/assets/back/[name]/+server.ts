@@ -9,5 +9,5 @@ export async function GET({ params }) {
 
     // console.log(result.rows);
 
-    return new Response(JSON.stringify(result.rows));
+    return new Response(JSON.stringify(result.rows[0]));
 }

@@ -8,6 +8,7 @@ export type CardSuit = 'clubs' | 'diamonds' | 'hearts' | 'spades' | 'jokers';
 
 // Paths
 export const ASSETS_BACK = '/assets/back/';
+export const ASSETS_TABLE = '/assets/table/';
 export const ASSETS_DECK = '/assets/deck/';
 export const ASSETS_DIE = '/assets/die/';
 export const ASSETS_SOUNDS = '/assets/sounds/';
@@ -99,6 +100,9 @@ export const BYRON_KNOLL = 'Byron Knoll';
 // Back Names
 export const ABJIKLAM = 'Abjiklam';
 
+// Table Names
+export const KALPONIC_STUDIO_PLANKS_LIGHT = 'Kalponic Studio (Planks Light)';
+
 // Die Names
 export const PAINRATIO_EMERALD = 'PAINratio (Emerald)';
 
@@ -107,6 +111,8 @@ export const GET_DECK = (name: string) =>
     "SELECT * FROM assets WHERE type = 'card_face' AND collection = '" + name + "'";
 export const GET_BACK = (name: string) =>
     "SELECT * FROM assets WHERE type = 'card_back' AND collection = '" + name + "'";
+export const GET_TABLE = (name: string) =>
+    "SELECT * FROM assets WHERE type = 'table' AND collection = '" + name + "'";
 export const GET_DIE = (name: string) =>
     "SELECT * FROM assets WHERE type = 'die' AND collection = '" + name + "'";
 export const GET_SOUNDS = (collection: string) =>

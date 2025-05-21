@@ -60,7 +60,6 @@
     };
 
     async function loadData() {
-        console.log('loading data...');
         const deck_response = await fetch(ASSETS_DECK + BYRON_KNOLL.replace(' ', '%20'));
         deckAssets = await deck_response.json();
 
@@ -72,11 +71,9 @@
     }
 
     onMount(() => {
-        console.log('mounting...');
         loadData();
 
         const resize = new ResizeObserver(([entry]) => {
-            console.log('resizing...');
             const { width, height } = entry.contentRect;
             const ratio = width / height;
 
@@ -106,7 +103,6 @@
 
     function getRoom() {
         while (room.length < 4) {
-            console.log('filling room...');
             // add animation here for reflling the room
             //     spawn a card back on top of the deck
             //     simulataneously
@@ -118,7 +114,6 @@
     }
 
     function canUseWeapon(monster: Card): boolean {
-        console.log('canUseWeapon?');
         // if there are defeated monsters,
         //     then return whether the monster's value is less than the value of the last defeated monster
         // else
@@ -141,8 +136,6 @@
     }
 
     function startGame() {
-        console.log('starting game...');
-
         // reset the deck
         deck = [...INITIAL_DECK_CONTENTS];
         deck.sort(() => Math.random() - 0.5);
@@ -193,7 +186,6 @@
         if (weapon > 0) {
             return;
         }
-        console.log('equipping weapon...');
         weapon = room[weaponIndex].value;
         room = room.filter((_, j) => j !== weaponIndex);
         roomWeaponHovered = 0;
@@ -203,7 +195,6 @@
     }
 
     function drinkPotion(potionIndex: number) {
-        console.log('drinking potion...');
         if (!isPotionUsed) {
             health = Math.min(health + room[potionIndex].value, MAX_HEALTH);
         }
@@ -230,7 +221,6 @@
     }
 
     function fightMonster(monsterIndex: number) {
-        console.log('attacking monster...');
         if (
             getEffectiveWeaponValue(monsterIndex) < VALUE_TO_DAMAGE.get(room[monsterIndex].value)!
         ) {
@@ -506,7 +496,6 @@
                 border: none;
                 "
                 onclick={() => {
-                    console.log('discarding weapon...');
                     weapon = 0;
                     while (defeatedMonsters.length > 0) {
                         defeatedMonsters.pop();
@@ -600,7 +589,6 @@
         height: 10%;
         "
         onclick={() => {
-            console.log('running from room...');
             while (room.length > 0) {
                 ranFromPreviousRoom = true;
                 const randomIndex = Math.floor(Math.random() * room.length);

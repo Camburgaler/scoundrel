@@ -1,28 +1,28 @@
-# sv
+# Scoundrel
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+## Credits
 
-## Creating a project
+This project was built with [`sv`](https://github.com/sveltejs/cli).
 
-If you're seeing this, you've probably already done this step. Congrats!
+Assets provided by
 
-```bash
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
-```
+- https://commons.wikimedia.org/wiki/Category:Playing_cards_set_by_Byron_Knoll
+- https://commons.wikimedia.org/wiki/Category:SVG_playing_cards_4
+- https://commons.wikimedia.org/wiki/Category:SVG_playing_cards_6
+- https://dettamada.itch.io/tarot-playing-cards
+- https://ddant1100.itch.io/ttrpg-legacy-cards-1
+- https://commons.wikimedia.org/wiki/Category:SVG_playing_card_backs
+- https://painartio.itch.io/dice-sets
+- https://penzilla.itch.io/ultimate-dice-icon-pac
+- https://jdsherbert.itch.io/tabletop-games-sfx-pack
+- https://kalponic-studio.itch.io/80-stylized-vegetation-textures
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Install dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
 
 ```bash
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
 ## Building

@@ -1,5 +1,14 @@
 <script lang="ts">
-    import { ASSETS_TABLE, KALPONIC_STUDIO_PLANKS_LIGHT } from '$lib/constants';
+    import {
+        ABJIKLAM,
+        ASSETS_BACK,
+        ASSETS_DECK,
+        ASSETS_DIE,
+        ASSETS_TABLE,
+        BYRON_KNOLL,
+        KALPONIC_STUDIO_PLANKS_LIGHT,
+        PAINRATIO_EMERALD,
+    } from '$lib/constants';
     import type { AssetRow } from '$lib/interfaces/assets';
     import { getAssetsWithLocalCache } from '$lib/utils/cache';
     import { onMount } from 'svelte';
@@ -7,18 +16,49 @@
 
     // Assets
     let tableAsset: AssetRow | undefined = $state(undefined);
-    let tableNames: AssetRow[] = $state([]);
+    let tableNames: string[] = $state([]);
+    let backAsset: AssetRow | undefined = $state(undefined);
+    let backNames: string[] = $state([]);
+    let deckAssets: AssetRow[] = $state([]);
+    let deckNames: string[] = $state([]);
+    let dieAssets: AssetRow[] = $state([]);
+    let dieNames: string[] = $state([]);
 
     // States
     let showTray = $state(false);
     let selectedTable = $state(KALPONIC_STUDIO_PLANKS_LIGHT);
+    let selectedBack = $state(ABJIKLAM);
+    let selectedDeck = $state(BYRON_KNOLL);
+    let selectedDie = $state(PAINRATIO_EMERALD);
 
-    async function loadData() {
-        tableNames = await getAssetsWithLocalCache(ASSETS_TABLE);
-
+    async function loadTableAsset() {
         tableAsset = await getAssetsWithLocalCache(
             ASSETS_TABLE + selectedTable.replace(' ', '%20'),
         );
+    }
+
+    async function loadBackAsset() {
+        backAsset = await getAssetsWithLocalCache(ASSETS_BACK + selectedBack.replace(' ', '%20'));
+    }
+
+    async function loadDeckAsset() {
+        deckAssets = await getAssetsWithLocalCache(ASSETS_DECK + selectedDeck.replace(' ', '%20'));
+    }
+
+    async function loadDieAsset() {
+        dieAssets = await getAssetsWithLocalCache(ASSETS_DIE + selectedDie.replace(' ', '%20'));
+    }
+
+    async function loadData() {
+        tableNames = (await getAssetsWithLocalCache(ASSETS_TABLE)).sort();
+        backNames = (await getAssetsWithLocalCache(ASSETS_BACK)).sort();
+        deckNames = (await getAssetsWithLocalCache(ASSETS_DECK)).sort();
+        dieNames = (await getAssetsWithLocalCache(ASSETS_DIE)).sort();
+
+        loadTableAsset();
+        loadBackAsset();
+        loadDeckAsset();
+        loadDieAsset();
     }
 
     onMount(() => {
@@ -29,13 +69,16 @@
         if (selectedTable) {
             loadTableAsset();
         }
+        if (selectedBack) {
+            loadBackAsset();
+        }
+        if (selectedDeck) {
+            loadDeckAsset();
+        }
+        if (selectedDie) {
+            loadDieAsset();
+        }
     });
-
-    async function loadTableAsset() {
-        tableAsset = await getAssetsWithLocalCache(
-            ASSETS_TABLE + selectedTable.replace(' ', '%20'),
-        );
-    }
 </script>
 
 <div
@@ -63,8 +106,41 @@
             <label for="table">Table: </label>
             <select name="table" id="table" bind:value={selectedTable}>
                 {#each tableNames as tableName}
-                    <option value={tableName.collection}>
-                        {tableName.collection}
+                    <option value={tableName}>
+                        {tableName}
+                    </option>
+                {/each}
+            </select>
+        </div>
+        <hr />
+        <div>
+            <label for="back">Card Back: </label>
+            <select name="back" id="back" bind:value={selectedBack}>
+                {#each backNames as backName}
+                    <option value={backName}>
+                        {backName}
+                    </option>
+                {/each}
+            </select>
+        </div>
+        <hr />
+        <div>
+            <label for="deck">Card Deck: </label>
+            <select name="deck" id="deck" bind:value={selectedDeck}>
+                {#each deckNames as deckName}
+                    <option value={deckName}>
+                        {deckName}
+                    </option>
+                {/each}
+            </select>
+        </div>
+        <hr />
+        <div>
+            <label for="die">HP Die: </label>
+            <select name="die" id="die" bind:value={selectedDie}>
+                {#each dieNames as dieName}
+                    <option value={dieName}>
+                        {dieName}
                     </option>
                 {/each}
             </select>

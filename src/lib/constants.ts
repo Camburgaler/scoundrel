@@ -109,12 +109,15 @@ export const PAINRATIO_EMERALD = 'PAINratio (Emerald)';
 // PostgreSQL Queries
 export const GET_DECK = (name: string) =>
     "SELECT * FROM assets WHERE type = 'card_face' AND collection = '" + name + "'";
+export const GET_DECK_NAMES = "SELECT DISTINCT collection FROM assets WHERE type = 'card_face'";
 export const GET_BACK = (name: string) =>
     "SELECT * FROM assets WHERE type = 'card_back' AND collection = '" + name + "'";
+export const GET_BACK_NAMES = "SELECT DISTINCT collection FROM assets WHERE type = 'card_back'";
 export const GET_TABLE = (name: string) =>
     "SELECT * FROM assets WHERE type = 'table' AND collection = '" + name + "'";
 export const GET_TABLE_NAMES = "SELECT DISTINCT collection FROM assets WHERE type = 'table'";
 export const GET_DIE = (name: string) =>
     "SELECT * FROM assets WHERE type = 'die' AND collection = '" + name + "'";
+export const GET_DIE_NAMES = "SELECT DISTINCT collection FROM assets WHERE type = 'die'";
 export const GET_SOUNDS = (collection: string) =>
     "SELECT * FROM assets WHERE type = 'sound_" + collection + "'";

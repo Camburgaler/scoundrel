@@ -1,7 +1,7 @@
 export const R2_PUBLIC_BASE = 'https://scoundrel.camburgaler.com/';
 
 // Constant Values
-export const ERROR_ANIMATION_DURATION = 1000;
+export const CACHE_EXPIRATION = 86400000; // 24hrs
 
 // Helper Types
 export type CardSuit = 'clubs' | 'diamonds' | 'hearts' | 'spades' | 'jokers';

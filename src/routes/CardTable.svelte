@@ -12,6 +12,7 @@
     } from '$lib/constants';
     import type { AssetRow } from '$lib/interfaces/assets';
     import type { Card } from '$lib/interfaces/card';
+    import { getAssetsWithLocalCache } from '$lib/utils/cache';
     import { onMount } from 'svelte';
 
     const MARGIN = 6;
@@ -60,14 +61,13 @@
     };
 
     async function loadData() {
-        const deck_response = await fetch(ASSETS_DECK + BYRON_KNOLL.replace(' ', '%20'));
-        deckAssets = await deck_response.json();
+        deckAssets = await getAssetsWithLocalCache(ASSETS_DECK + BYRON_KNOLL.replace(' ', '%20'));
 
-        const back_response = await fetch(ASSETS_BACK + ABJIKLAM);
-        cardBackAsset = (await back_response.json())[0];
+        cardBackAsset = (await getAssetsWithLocalCache(ASSETS_BACK + ABJIKLAM))[0];
 
-        const die_response = await fetch(ASSETS_DIE + PAINRATIO_EMERALD.replace(' ', '%20'));
-        dieAssets = await die_response.json();
+        dieAssets = await getAssetsWithLocalCache(
+            ASSETS_DIE + PAINRATIO_EMERALD.replace(' ', '%20'),
+        );
     }
 
     onMount(() => {
@@ -91,15 +91,6 @@
 
         return () => resize.disconnect();
     });
-
-    // function triggerError() {
-    //     const id = crypto.randomUUID();
-    //     errorSymbols = [...errorSymbols, id];
-
-    //     setTimeout(() => {
-    //         errorSymbols = errorSymbols.filter((e) => e !== id);
-    //     }, ERROR_ANIMATION_DURATION);
-    // }
 
     function getRoom() {
         while (room.length < 4) {

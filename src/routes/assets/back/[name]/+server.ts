@@ -1,5 +1,5 @@
 import { GET_BACK } from '$lib/constants.js';
-import { pool } from '$lib/neon_client';
+import { pool } from '$lib/utils/neon_client';
 
 export async function GET({ params }) {
     const name = params.name.split('%20');

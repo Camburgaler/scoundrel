@@ -1,6 +1,7 @@
 <script lang="ts">
     import { ASSETS_TABLE, KALPONIC_STUDIO_PLANKS_LIGHT } from '$lib/constants';
     import type { AssetRow } from '$lib/interfaces/assets';
+    import { getAssetsWithLocalCache } from '$lib/utils/cache';
     import { onMount } from 'svelte';
     import CardTable from './CardTable.svelte';
 
@@ -8,10 +9,9 @@
     let tableAssets: AssetRow[] = $state([]);
 
     async function loadData() {
-        const table_response = await fetch(
+        tableAssets = await getAssetsWithLocalCache(
             ASSETS_TABLE + KALPONIC_STUDIO_PLANKS_LIGHT.replace(' ', '%20'),
         );
-        tableAssets = await table_response.json();
     }
 
     onMount(() => {

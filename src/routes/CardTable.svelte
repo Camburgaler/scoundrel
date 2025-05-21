@@ -224,6 +224,9 @@
         monsterHovered = 0;
         if (health === 0) {
             isGameStarted = false;
+            room = [];
+            weapon = 0;
+            defeatedMonsters = [];
         }
         ranFromPreviousRoom = false;
     }
@@ -306,22 +309,27 @@
     >
         {#if isGameStarted}
             <button
+                class="button-wrapper"
                 style="
-            width: 100%;
-            height: 100%; 
-            background-color: {TRANSPARENT};
-            border: none;
-            "
+                width: 100%;
+                height: 100%; 
+                background-color: {TRANSPARENT};
+                border: none;
+                "
             >
                 {#if deck.length > 0}
                     <img
+                        class="button-img"
                         src={cardBackAsset?.url}
                         alt="card back"
                         style="
-                    width: 100%;
-                    height: 100%;
-                    "
+                        width: 100%;
+                        height: 100%;
+                        "
                     />
+                    <div class="overlay">
+                        {deck.length}
+                    </div>
                 {:else}
                     <div
                         style="
@@ -329,8 +337,8 @@
                     height: {cardSize.height}px;
                     object-fit: contain;
                     margin: {MARGIN}px;
-                    background-color: #000;
-                    opacity: 0.2;
+                    background-color: {BLACK_BACKGROUND};
+                    border-radius: 1rem;
                     "
                     ></div>
                 {/if}
@@ -341,6 +349,8 @@
             width: 100%;
             height: 100%; 
             background-color: {WHITE_BACKGROUND};
+            border-radius: 1rem;
+            font-size: 2rem;
             "
                 onclick={startGame}
             >
@@ -356,6 +366,7 @@
             height: {cardSize.height}px; 
             object-fit: contain; 
             margin: {MARGIN}px;
+            font-size: 1.5rem;
             "
     >
         {interpretMove()}
@@ -382,6 +393,7 @@
                 object-fit: contain;
                 margin: {MARGIN}px;
                 background-color: {room[i] ? TRANSPARENT : BLACK_BACKGROUND};
+                border-radius: 1rem;
                 "
         >
             {#if room[i]}
@@ -395,6 +407,7 @@
                             : WHITE_BACKGROUND
                         : TRANSPARENT};
                     border: none;
+                    border-radius: 1rem;
                     "
                     onclick={() => interactWithRoom(i)}
                 >
@@ -425,7 +438,7 @@
 
     <!-- health -->
     {#if dieAssets && deckAssets.find((asset: AssetRow) => asset.suit === 'jokers')}
-        <div
+        <button
             style="
             width: {cardSize.width}px;
             height: {cardSize.height}px;
@@ -436,6 +449,8 @@
                 : potionHovered && !isPotionUsed
                   ? GREEN_BACKGROUND
                   : TRANSPARENT};
+            border: none;
+            border-radius: 1rem;
             "
         >
             <img
@@ -447,7 +462,7 @@
                 width: 100%;
                 "
             />
-        </div>
+        </button>
     {:else}
         <div
             style="
@@ -456,6 +471,7 @@
             object-fit: contain;
             margin: {MARGIN}px;
             background-color: {BLACK_BACKGROUND};
+            border-radius: 1rem;
             "
         >
             {health}
@@ -476,6 +492,7 @@
             : roomWeaponHovered
               ? GREEN_BACKGROUND
               : BLACK_BACKGROUND};
+        border-radius: 1rem;
         "
     >
         {#if weapon}
@@ -519,11 +536,13 @@
             "
         >
             {#if defeatedMonsters[defeatedMonsters.length - 1 - i]}
-                <div
+                <button
                     class="image-container"
                     style="
                     height: 100%; 
                     width: 100%;
+                    background-color: {TRANSPARENT};
+                    border: none;
                     "
                 >
                     <img
@@ -561,23 +580,27 @@
                             stroke-opacity="0.5"
                         />
                     </svg>
-                </div>
+                </button>
             {:else}
                 <div
                     style="
                     width: {cardSize.width}px;
                     height: {cardSize.height}px;
-                    background-color: #000;
-                    opacity: 0.2;
+                    background-color: {BLACK_BACKGROUND};
+                    border-radius: 1rem;
                     "
                 ></div>
             {/if}
         </div>
     {/each}
+
+    <!-- run button -->
     <button
         style="
         width: 100%;
         height: 10%;
+        border-radius: 1rem;
+        font-size: 2rem;
         "
         onclick={() => {
             while (room.length > 0) {
@@ -608,9 +631,7 @@
         box-sizing: border-box;
         background-color: #35654d;
         border-radius: 2rem;
-        /* margin: 1rem auto; */
         box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.4);
-        /* align-items: center; */
     }
 
     .image-container {
@@ -629,5 +650,28 @@
         width: 100%;
         height: 100%;
         pointer-events: none;
+        border-radius: 1rem;
+    }
+
+    .button-wrapper {
+        position: relative;
+        display: inline-block;
+        padding: 0;
+        border: none;
+        background: none;
+    }
+
+    .overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        pointer-events: none; /* allows clicks to pass through */
+        font-size: 2rem;
+        width: auto;
+        height: auto;
+        background-color: rgba(255, 255, 255, 0.7);
+        padding: 0.5rem;
+        border-radius: 1rem;
     }
 </style>

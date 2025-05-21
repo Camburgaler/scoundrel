@@ -11,15 +11,12 @@ export async function getAssetsWithLocalCache(url: string): Promise<AssetRow[]> 
     if (cached) {
         const data: CacheData = JSON.parse(cached);
         if (Date.now() - data.timestamp > CACHE_EXPIRATION) {
-            console.log('data expired');
             localStorage.removeItem(url);
         } else {
-            console.log('using cache');
             return data.rows;
         }
     }
 
-    console.log('fetching');
     const res = await fetch(url);
     const data = await res.json();
     localStorage.setItem(url, JSON.stringify({ timestamp: Date.now(), rows: data }));

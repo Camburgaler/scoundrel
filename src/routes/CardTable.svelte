@@ -1,9 +1,11 @@
 <script lang="ts">
+    // Imports
     import { INITIAL_DECK_CONTENTS, VALUE_TO_DAMAGE, VALUE_TO_RANK } from '$lib/constants';
     import type { AssetRow } from '$lib/interfaces/assets';
     import type { Card } from '$lib/interfaces/card';
     import { onMount } from 'svelte';
 
+    // Constants
     const MARGIN = 6;
     const MAX_HEALTH = 20;
     const TRANSPARENT = 'transparent';
@@ -20,35 +22,32 @@
     }: { deckAssets: AssetRow[]; cardBackAsset: AssetRow | undefined; dieAssets: AssetRow[] } =
         $props();
 
-    // Table
+    // Reactive Value
     let cardTable: HTMLDivElement;
     let cardSize = $state({ width: 100, height: 145 });
-
-    // Card States
-    // initial deck is a full 54-card deck minus the jokers, the red face cards, and the red aces
     let deck: Card[] = $state([...INITIAL_DECK_CONTENTS]);
     let room: Card[] = $state([]); // cards in the room
     let weapon: number = $state(0);
     let defeatedMonsters: Card[] = $state([]);
-
-    // Hovered States
-    let monsterHovered = $state(0); // (room index + 1) of the monster
-    let roomWeaponHovered = $state(0); // (room index + 1) of the weapon
-    let potionHovered = $state(0); // (room index + 1) of the potion
-    let isEquippedWeaponHovered = $state(false); // whether the equipped weapon is hovered
-    let isRunHovered = $state(false); // whether the run button is hovered
-
-    // Game States
     let isGameStarted = $state(false); // whether the game has started
     let health = $state(20); // player health
     let isPotionUsed = $state(false); // whether a potion has been used in this room
     let ranFromPreviousRoom = $state(false); // whether the player ran from the previous room
 
+    // Hovered States
+    let hovered = $state({
+        monster: 0,
+        roomWeapon: 0,
+        potion: 0,
+        equippedWeapon: false,
+        run: false,
+    });
+
     const isThisRoomCardHovered = (index: number) => {
         return (
-            (monsterHovered && monsterHovered - 1 === index) ||
-            (roomWeaponHovered && roomWeaponHovered - 1 === index) ||
-            (potionHovered && potionHovered - 1 === index)
+            (hovered.monster && hovered.monster - 1 === index) ||
+            (hovered.roomWeapon && hovered.roomWeapon - 1 === index) ||
+            (hovered.potion && hovered.potion - 1 === index)
         );
     };
 
@@ -135,10 +134,13 @@
         defeatedMonsters = [];
 
         // reset hovered states
-        monsterHovered = 0;
-        roomWeaponHovered = 0;
-        potionHovered = 0;
-        isEquippedWeaponHovered = false;
+        hovered = {
+            monster: 0,
+            roomWeapon: 0,
+            potion: 0,
+            equippedWeapon: false,
+            run: false,
+        };
 
         // reset health
         health = 20;
@@ -159,7 +161,7 @@
         }
         weapon = room[weaponIndex].value;
         room = room.filter((_, j) => j !== weaponIndex);
-        roomWeaponHovered = 0;
+        hovered.roomWeapon = 0;
         ranFromPreviousRoom = false;
         // add animation here to equip the weapon
         //     slide weapon card from room to weapon slot
@@ -171,7 +173,7 @@
         }
         room = room.filter((_, j) => j !== potionIndex);
         isPotionUsed = true;
-        potionHovered = 0;
+        hovered.potion = 0;
         ranFromPreviousRoom = false;
         // add animation here to drink the potion
         //     slide potion card from room to health
@@ -201,7 +203,7 @@
             defeatedMonsters.push(room[monsterIndex]);
         }
         room = room.filter((_, j) => j !== monsterIndex);
-        monsterHovered = 0;
+        hovered.monster = 0;
         if (health === 0) {
             isGameStarted = false;
             room = [];
@@ -212,13 +214,13 @@
     }
 
     function interactWithRoom(index: number) {
-        if (roomWeaponHovered) {
+        if (hovered.roomWeapon) {
             equipWeapon(index);
         }
-        if (potionHovered) {
+        if (hovered.potion) {
             drinkPotion(index);
         }
-        if (monsterHovered) {
+        if (hovered.monster) {
             fightMonster(index);
         }
         if (room.length === 1) {
@@ -234,41 +236,42 @@
 
     function isHoveredMonsterDamageGreaterThanWeapon(): boolean {
         return (
-            monsterHovered > 0 && VALUE_TO_DAMAGE.get(room[monsterHovered - 1].value)! - weapon > 0
+            hovered.monster > 0 &&
+            VALUE_TO_DAMAGE.get(room[hovered.monster - 1].value)! - weapon > 0
         );
     }
 
     function interpretMove(): string {
-        if (monsterHovered) {
+        if (hovered.monster) {
             let newHealth = health;
             if (
-                getEffectiveWeaponValue(monsterHovered - 1) <
-                VALUE_TO_DAMAGE.get(room[monsterHovered - 1].value)!
+                getEffectiveWeaponValue(hovered.monster - 1) <
+                VALUE_TO_DAMAGE.get(room[hovered.monster - 1].value)!
             ) {
-                newHealth = getNewHealth(monsterHovered - 1);
+                newHealth = getNewHealth(hovered.monster - 1);
             }
             return (
                 'DAMAGE: ' +
                 Math.min(
                     health - newHealth,
-                    VALUE_TO_DAMAGE.get(room[monsterHovered - 1].value)!,
+                    VALUE_TO_DAMAGE.get(room[hovered.monster - 1].value)!,
                 ).toString() +
                 (newHealth === 0 ? ' (THIS WILL KILL YOU)' : '')
             );
         }
-        if (roomWeaponHovered) {
+        if (hovered.roomWeapon) {
             return weapon > 0 ? 'DISCARD CURRENT WEAPON TO EQUIP THIS ONE' : 'EQUIP WEAPON';
         }
-        if (isEquippedWeaponHovered) {
+        if (hovered.equippedWeapon) {
             return 'DISCARD WEAPON';
         }
-        if (potionHovered) {
+        if (hovered.potion) {
             return isPotionUsed
                 ? 'DISCARD POTION'
                 : 'RECOVER: ' +
-                      Math.min(MAX_HEALTH - health, room[potionHovered - 1].value).toString();
+                      Math.min(MAX_HEALTH - health, room[hovered.potion - 1].value).toString();
         }
-        if (isRunHovered && isGameStarted) {
+        if (hovered.run && isGameStarted) {
             return ranFromPreviousRoom ? 'YOU ARE STUCK HERE' : 'RUN FROM THIS ROOM';
         }
         return '';
@@ -382,7 +385,7 @@
                     width: 100%;
                     height: 100%;
                     background-color: {isThisRoomCardHovered(i)
-                        ? (potionHovered && isPotionUsed) || (roomWeaponHovered && weapon > 0)
+                        ? (hovered.potion && isPotionUsed) || (hovered.roomWeapon && weapon > 0)
                             ? RED_BACKGROUND
                             : WHITE_BACKGROUND
                         : TRANSPARENT};
@@ -401,14 +404,16 @@
                         height: 100%;
                         "
                         onmouseenter={() => {
-                            monsterHovered = ['spades', 'clubs'].includes(room[i].suit) ? i + 1 : 0;
-                            roomWeaponHovered = room[i].suit === 'diamonds' ? i + 1 : 0;
-                            potionHovered = room[i].suit === 'hearts' ? i + 1 : 0;
+                            hovered.monster = ['spades', 'clubs'].includes(room[i].suit)
+                                ? i + 1
+                                : 0;
+                            hovered.roomWeapon = room[i].suit === 'diamonds' ? i + 1 : 0;
+                            hovered.potion = room[i].suit === 'hearts' ? i + 1 : 0;
                         }}
                         onmouseleave={() => {
-                            monsterHovered = 0;
-                            roomWeaponHovered = 0;
-                            potionHovered = 0;
+                            hovered.monster = 0;
+                            hovered.roomWeapon = 0;
+                            hovered.potion = 0;
                         }}
                     /></button
                 >
@@ -428,7 +433,7 @@
             margin: {MARGIN}px;
             background-color: {isHoveredMonsterDamageGreaterThanWeapon()
                 ? RED_BACKGROUND
-                : potionHovered && !isPotionUsed
+                : hovered.potion && !isPotionUsed
                   ? GREEN_BACKGROUND
                   : TRANSPARENT};
             border: none;
@@ -469,10 +474,10 @@
         object-fit: contain;
         margin: {MARGIN}px;
         background-color: {weapon
-            ? isEquippedWeaponHovered || (monsterHovered && canUseWeapon(room[monsterHovered - 1]))
+            ? hovered.equippedWeapon || (hovered.monster && canUseWeapon(room[hovered.monster - 1]))
                 ? RED_BACKGROUND
                 : TRANSPARENT
-            : roomWeaponHovered
+            : hovered.roomWeapon
               ? GREEN_BACKGROUND
               : BLACK_BACKGROUND};
         border-radius: 1rem;
@@ -491,7 +496,7 @@
                     while (defeatedMonsters.length > 0) {
                         defeatedMonsters.pop();
                     }
-                    isEquippedWeaponHovered = false;
+                    hovered.equippedWeapon = false;
                 }}
             >
                 <img
@@ -501,8 +506,8 @@
                 width: 100%;
                 height: 100%;
                 "
-                    onmouseenter={() => (isEquippedWeaponHovered = true)}
-                    onmouseleave={() => (isEquippedWeaponHovered = false)}
+                    onmouseenter={() => (hovered.equippedWeapon = true)}
+                    onmouseleave={() => (hovered.equippedWeapon = false)}
                 />
             </button>
         {/if}
@@ -595,8 +600,8 @@
             getRoom();
         }}
         disabled={ranFromPreviousRoom || room.length < 4}
-        onmouseenter={() => (isRunHovered = true)}
-        onmouseleave={() => (isRunHovered = false)}
+        onmouseenter={() => (hovered.run = true)}
+        onmouseleave={() => (hovered.run = false)}
         >RUN!
     </button>
 </div>

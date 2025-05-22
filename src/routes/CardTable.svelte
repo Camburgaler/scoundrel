@@ -13,16 +13,16 @@
     const GREEN_BACKGROUND = 'rgba(0, 255, 0, 0.2)';
 
     // Props
-    let { deckAssets, cardBackAsset, dieAssets } = $props();
+    let {
+        deckAssets,
+        cardBackAsset,
+        dieAssets,
+    }: { deckAssets: AssetRow[]; cardBackAsset: AssetRow | undefined; dieAssets: AssetRow[] } =
+        $props();
 
     // Table
     let cardTable: HTMLDivElement;
     let cardSize = $state({ width: 100, height: 145 });
-
-    // Assets
-    // let deckAssets: AssetRow[] = props.deckAssets;
-    // let cardBackAsset: AssetRow = props.cardBackAsset;
-    // let dieAssets: AssetRow[] = props.dieAssets;
 
     // Card States
     // initial deck is a full 54-card deck minus the jokers, the red face cards, and the red aces
@@ -52,17 +52,7 @@
         );
     };
 
-    async function loadData() {
-        // deckAssets = await getAssetsWithLocalCache(ASSETS_DECK + BYRON_KNOLL.replace(' ', '%20'));
-        // cardBackAsset = await getAssetsWithLocalCache(ASSETS_BACK + ABJIKLAM);
-        // dieAssets = await getAssetsWithLocalCache(
-        //     ASSETS_DIE + PAINRATIO_EMERALD.replace(' ', '%20'),
-        // );
-    }
-
     onMount(() => {
-        loadData();
-
         const resize = new ResizeObserver(([entry]) => {
             const { width, height } = entry.contentRect;
             const ratio = width / height;
@@ -403,7 +393,9 @@
                 >
                     <img
                         src={findDeckAssetByCard(room[i])?.url}
-                        alt="{VALUE_TO_RANK.get(deckAssets[i]?.value)} of {deckAssets[i]?.suit}"
+                        alt="{VALUE_TO_RANK.get(
+                            findDeckAssetByCard(room[i])?.value!,
+                        )} of {findDeckAssetByCard(room[i])?.suit}"
                         style="
                         width: 100%;
                         height: 100%;

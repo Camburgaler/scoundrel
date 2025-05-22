@@ -99,6 +99,7 @@ export const BYRON_KNOLL = 'Byron Knoll';
 
 // Back Names
 export const ABJIKLAM = 'Abjiklam';
+export const ADRIAN_KENNARD_RED = 'Adrian Kennard (Red)';
 
 // Table Names
 export const KALPONIC_STUDIO_PLANKS_LIGHT = 'Kalponic Studio (Planks Light)';

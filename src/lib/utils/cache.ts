@@ -1,5 +1,3 @@
-import { CACHE_EXPIRATION } from '$lib/constants';
-
 type CacheData = {
     timestamp: number;
     rows: any[];
@@ -9,11 +7,15 @@ export async function getAssetsWithLocalCache(url: string): Promise<any> {
     const cached: string | null = localStorage.getItem(url);
     if (cached) {
         const data: CacheData = JSON.parse(cached);
-        if (Date.now() - data.timestamp > CACHE_EXPIRATION) {
-            localStorage.removeItem(url);
-        } else {
-            return data.rows;
-        }
+
+        // re-enable cache expiration when customization is implemented
+        // if (Date.now() - data.timestamp > CACHE_EXPIRATION) {
+        //     localStorage.removeItem(url);
+        // } else {
+        //     return data.rows;
+        // }
+
+        return data.rows;
     }
 
     const res = await fetch(url);

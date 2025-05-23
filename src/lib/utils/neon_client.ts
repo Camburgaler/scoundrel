@@ -1,4 +1,4 @@
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 import { Pool } from 'pg';
 
 dotenv.config();
@@ -6,6 +6,6 @@ dotenv.config();
 export const pool = new Pool({
     connectionString: process.env.NEON_DB_URL,
     ssl: {
-        rejectUnauthorized: false
-    }
+        rejectUnauthorized: false,
+    },
 });

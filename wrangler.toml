@@ -1,0 +1,4 @@
+name = "SCOUNDREL"
+main = ".svelte-kit/cloudflare/_worker.js"
+compatibility_date = "2025-05-23"
+assets = {binding = "ASSETS", directory = ".svelte-kit/cloudflare"}

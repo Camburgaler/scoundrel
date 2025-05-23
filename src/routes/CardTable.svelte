@@ -43,14 +43,7 @@
         run: false,
     });
 
-    const isThisRoomCardHovered = (index: number) => {
-        return (
-            (hovered.monster && hovered.monster - 1 === index) ||
-            (hovered.roomWeapon && hovered.roomWeapon - 1 === index) ||
-            (hovered.potion && hovered.potion - 1 === index)
-        );
-    };
-
+    // Lifecycle: Resize Handling
     onMount(() => {
         const resize = new ResizeObserver(([entry]) => {
             const { width, height } = entry.contentRect;
@@ -67,21 +60,17 @@
         });
 
         resize.observe(cardTable);
-
         return () => resize.disconnect();
     });
 
-    function getRoom() {
-        while (room.length < 4) {
-            // add animation here for reflling the room
-            //     spawn a card back on top of the deck
-            //     simulataneously
-            //         slide the card back into the its spot in the room
-            //         flip the card back over to reveal the card
-            room.push(deck.shift()!);
-        }
-        isPotionUsed = false;
-    }
+    // Derived/Helper Functions
+    const isThisRoomCardHovered = (index: number) => {
+        return (
+            (hovered.monster && hovered.monster - 1 === index) ||
+            (hovered.roomWeapon && hovered.roomWeapon - 1 === index) ||
+            (hovered.potion && hovered.potion - 1 === index)
+        );
+    };
 
     function canUseWeapon(monster: Card): boolean {
         // if there are defeated monsters,
@@ -90,25 +79,40 @@
         //     return whether the equipped weapon is greater than 0
         return defeatedMonsters.length
             ? VALUE_TO_DAMAGE.get(monster.value)! <
-                  VALUE_TO_DAMAGE.get(defeatedMonsters[defeatedMonsters.length - 1].value)!
+                  VALUE_TO_DAMAGE.get(defeatedMonsters.at(-1)!.value)!
             : weapon > 0;
     }
 
     function getEffectiveWeaponValue(monsterIndex: number): number {
-        return canUseWeapon(room[monsterIndex])
-            ? defeatedMonsters.length > 0
-                ? Math.min(
-                      weapon,
-                      VALUE_TO_DAMAGE.get(defeatedMonsters[defeatedMonsters.length - 1].value)!,
-                  )
-                : weapon
-            : 0;
+        const monster = room[monsterIndex];
+
+        if (!canUseWeapon(monster)) {
+            return 0;
+        }
+
+        if (defeatedMonsters.length === 0) {
+            return weapon;
+        }
+
+        return Math.min(weapon, VALUE_TO_DAMAGE.get(defeatedMonsters.at(-1)!.value)!);
     }
 
+    function getNewHealth(monsterIndex: number): number {
+        const damage = Math.max(
+            0,
+            VALUE_TO_DAMAGE.get(room[monsterIndex].value)! - getEffectiveWeaponValue(monsterIndex),
+        );
+        return Math.max(health - damage, 0);
+    }
+
+    function findDeckAssetByCard(card: Card): AssetRow | undefined {
+        return deckAssets.find((a) => a.suit === card.suit && a.value === card.value);
+    }
+
+    // Game Logic
     function startGame() {
         // reset the deck
-        deck = [...INITIAL_DECK_CONTENTS];
-        deck.sort(() => Math.random() - 0.5);
+        deck = [...INITIAL_DECK_CONTENTS].sort(() => Math.random() - 0.5);
         // add animation here to have entire deck quickly slide in from off screen
         // add animation here for shuffling the deck
         //     deck slides into center of screen
@@ -133,6 +137,15 @@
         // reset defeated monsters
         defeatedMonsters = [];
 
+        // reset health
+        health = MAX_HEALTH;
+
+        // reset isPotionUsed
+        isPotionUsed = false;
+
+        // reset ranFromPreviousRoom
+        ranFromPreviousRoom = false;
+
         // reset hovered states
         hovered = {
             monster: 0,
@@ -142,36 +155,38 @@
             run: false,
         };
 
-        // reset health
-        health = 20;
-
-        // reset isPotionUsed
-        isPotionUsed = false;
-
-        // reset ranFromPreviousRoom
-        ranFromPreviousRoom = false;
-
         getRoom();
         isGameStarted = true;
     }
 
-    function equipWeapon(weaponIndex: number) {
-        if (weapon > 0) {
-            return;
+    function getRoom() {
+        while (room.length < 4 && deck.length > 0) {
+            // add animation here for reflling the room
+            //     spawn a card back on top of the deck
+            //     simulataneously
+            //         slide the card back into the its spot in the room
+            //         flip the card back over to reveal the card
+            room.push(deck.shift()!);
         }
-        weapon = room[weaponIndex].value;
-        room = room.filter((_, j) => j !== weaponIndex);
+        isPotionUsed = false;
+    }
+
+    function equipWeapon(index: number) {
+        if (weapon > 0) return;
+
+        weapon = room[index].value;
+        room.splice(index, 1);
         hovered.roomWeapon = 0;
         ranFromPreviousRoom = false;
         // add animation here to equip the weapon
         //     slide weapon card from room to weapon slot
     }
 
-    function drinkPotion(potionIndex: number) {
+    function drinkPotion(index: number) {
         if (!isPotionUsed) {
-            health = Math.min(health + room[potionIndex].value, MAX_HEALTH);
+            health = Math.min(health + room[index].value, MAX_HEALTH);
         }
-        room = room.filter((_, j) => j !== potionIndex);
+        room.splice(index, 1);
         isPotionUsed = true;
         hovered.potion = 0;
         ranFromPreviousRoom = false;
@@ -182,98 +197,65 @@
         //         fade out card
     }
 
-    function getNewHealth(monsterIndex: number): number {
-        return Math.max(
-            health -
-                Math.abs(
-                    VALUE_TO_DAMAGE.get(room[monsterIndex].value)! -
-                        getEffectiveWeaponValue(monsterIndex),
-                ),
-            0,
-        );
-    }
+    function fightMonster(index: number) {
+        const effective = getEffectiveWeaponValue(index);
+        const monsterValue = VALUE_TO_DAMAGE.get(room[index].value)!;
 
-    function fightMonster(monsterIndex: number) {
-        if (
-            getEffectiveWeaponValue(monsterIndex) < VALUE_TO_DAMAGE.get(room[monsterIndex].value)!
-        ) {
-            health = getNewHealth(monsterIndex);
+        if (effective < monsterValue) {
+            health = getNewHealth(index);
         }
-        if (weapon && canUseWeapon(room[monsterIndex])) {
-            defeatedMonsters.push(room[monsterIndex]);
+
+        if (weapon && canUseWeapon(room[index])) {
+            defeatedMonsters.push(room[index]);
         }
-        room = room.filter((_, j) => j !== monsterIndex);
+
+        room.splice(index, 1);
         hovered.monster = 0;
+
         if (health === 0) {
             isGameStarted = false;
             room = [];
             weapon = 0;
             defeatedMonsters = [];
         }
+
         ranFromPreviousRoom = false;
     }
 
     function interactWithRoom(index: number) {
-        if (hovered.roomWeapon) {
-            equipWeapon(index);
-        }
-        if (hovered.potion) {
-            drinkPotion(index);
-        }
-        if (hovered.monster) {
-            fightMonster(index);
-        }
-        if (room.length === 1) {
-            getRoom();
-        }
-    }
-
-    function findDeckAssetByCard(card: Card): AssetRow | undefined {
-        return deckAssets.find(
-            (asset: AssetRow) => asset.suit === card.suit && asset.value === card.value,
-        );
+        if (hovered.roomWeapon) equipWeapon(index);
+        if (hovered.potion) drinkPotion(index);
+        if (hovered.monster) fightMonster(index);
+        if (room.length === 1) getRoom();
     }
 
     function isHoveredMonsterDamageGreaterThanWeapon(): boolean {
         return (
             hovered.monster > 0 &&
-            VALUE_TO_DAMAGE.get(room[hovered.monster - 1].value)! - weapon > 0
+            VALUE_TO_DAMAGE.get(room[hovered.monster - 1].value)! -
+                getEffectiveWeaponValue(hovered.monster - 1) >
+                0
         );
     }
 
     function interpretMove(): string {
         if (hovered.monster) {
-            let newHealth = health;
-            if (
-                getEffectiveWeaponValue(hovered.monster - 1) <
-                VALUE_TO_DAMAGE.get(room[hovered.monster - 1].value)!
-            ) {
-                newHealth = getNewHealth(hovered.monster - 1);
-            }
-            return (
-                'DAMAGE: ' +
-                Math.min(
-                    health - newHealth,
-                    VALUE_TO_DAMAGE.get(room[hovered.monster - 1].value)!,
-                ).toString() +
-                (newHealth === 0 ? ' (THIS WILL KILL YOU)' : '')
-            );
+            const index = hovered.monster - 1;
+            const lostHealth = health - getNewHealth(index);
+
+            return `DAMAGE: ${lostHealth}${getNewHealth(index) === 0 ? ' (THIS WILL KILL YOU)' : ''}`;
         }
-        if (hovered.roomWeapon) {
+
+        if (hovered.roomWeapon)
             return weapon > 0 ? 'DISCARD CURRENT WEAPON TO EQUIP THIS ONE' : 'EQUIP WEAPON';
-        }
-        if (hovered.equippedWeapon) {
-            return 'DISCARD WEAPON';
-        }
-        if (hovered.potion) {
+        if (hovered.equippedWeapon) return 'DISCARD WEAPON';
+        if (hovered.potion)
             return isPotionUsed
                 ? 'DISCARD POTION'
                 : 'RECOVER: ' +
                       Math.min(MAX_HEALTH - health, room[hovered.potion - 1].value).toString();
-        }
-        if (hovered.run && isGameStarted) {
+        if (hovered.run && isGameStarted)
             return ranFromPreviousRoom ? 'YOU ARE STUCK HERE' : 'RUN FROM THIS ROOM';
-        }
         return '';
     }
 </script>

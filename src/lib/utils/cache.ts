@@ -1,9 +1,11 @@
+import type { AssetRow } from '$lib/interfaces/assets';
+
 type CacheData = {
     timestamp: number;
-    rows: any[];
+    rows: AssetRow[];
 };
 
-export async function getAssetsWithLocalCache(url: string): Promise<any> {
+export async function getAssetsWithLocalCache(url: string): Promise<AssetRow[]> {
     const cached: string | null = localStorage.getItem(url);
     if (cached) {
         const data: CacheData = JSON.parse(cached);
@@ -19,6 +21,10 @@ export async function getAssetsWithLocalCache(url: string): Promise<any> {
     }
 
     const res = await fetch(url);
+    if (!res.ok) {
+        throw new Error('Network response was not ok');
+    }
+
     const data = await res.json();
     localStorage.setItem(url, JSON.stringify({ timestamp: Date.now(), rows: data }));
     return data;

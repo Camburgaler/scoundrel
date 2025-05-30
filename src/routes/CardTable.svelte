@@ -15,10 +15,12 @@
     const GREEN_BACKGROUND = 'rgba(0, 255, 0, 0.2)';
 
     // Props
-    let props = $props();
-    let deckAssets: AssetRow[] = props.deckAssets ?? [];
-    let cardBackAsset: AssetRow | undefined = props.cardBackAsset ?? undefined;
-    let dieAssets: AssetRow[] = props.dieAssets ?? [];
+    let {
+        deckAssets,
+        cardBackAsset,
+        dieAssets,
+    }: { deckAssets: AssetRow[]; cardBackAsset: AssetRow | undefined; dieAssets: AssetRow[] } =
+        $props();
 
     // Reactive Value
     let cardTable: HTMLDivElement;

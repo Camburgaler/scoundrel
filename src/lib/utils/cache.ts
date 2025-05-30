@@ -1,11 +1,9 @@
-import type { AssetRow } from '$lib/interfaces/assets';
-
 type CacheData = {
     timestamp: number;
-    rows: AssetRow[];
+    rows: any[];
 };
 
-export async function getAssetsWithLocalCache(url: string): Promise<AssetRow[]> {
+export async function getAssetsWithLocalCache(url: string): Promise<any> {
     const cached: string | null = localStorage.getItem(url);
     if (cached) {
         const data: CacheData = JSON.parse(cached);

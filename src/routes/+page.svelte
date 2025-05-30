@@ -14,17 +14,17 @@
     import { onMount } from 'svelte';
     import CardTable from './CardTable.svelte';
 
-    // Assets
-    let tableAsset: AssetRow | undefined = $state(undefined);
-    let cardBackAsset: AssetRow | undefined = $state(undefined);
-    let deckAssets: AssetRow[] = $state([]);
-    let dieAssets: AssetRow[] = $state([]);
-
     // States
     let selectedTable = $state(KALPONIC_STUDIO_PLANKS_LIGHT);
     let selectedBack = $state(ADRIAN_KENNARD_RED);
     let selectedDeck = $state(BYRON_KNOLL);
     let selectedDie = $state(PAINRATIO_EMERALD);
+
+    // Assets
+    let tableAsset: AssetRow | undefined = $state(undefined);
+    let cardBackAsset: AssetRow | undefined = $state(undefined);
+    let deckAssets: AssetRow[] = $state([]);
+    let dieAssets: AssetRow[] = $state([]);
 
     async function loadTableAsset() {
         tableAsset = await getAssetsWithLocalCache(

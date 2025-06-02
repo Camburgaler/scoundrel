@@ -29,7 +29,7 @@
         "@tsconfig/svelte": "^5.0.4",
         "@types/express": "^5.0.1",
         "@types/node": "^22.15.29",
-        "@types/pg": "^8.11.14",
+        "@types/pg": "^8.15.4",
         "@sveltejs/adapter-vercel": "^5.7.2",
         "dotenv": "^16.5.0",
         "express": "^5.1.0",

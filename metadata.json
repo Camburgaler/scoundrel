@@ -1,0 +1,4 @@
+{
+    "name": "Scoundrel",
+    "description": "This is a roguelike dungeon-crawler card game called Scoundrel. It is written in Svelte and TypeScript. With this project, I was specifically trying to broaden my experience by using tools I was unfamiliar with. I chose Svelte for this reason, as well as Svelte being useful for easily animating the UI. Additionally, I got some experience storing and serving static assets, by writing asset metadata to a database, retrieving the metadata at runtime, then using that metadata to determine what assets are needed and from where to retrieve them."
+}

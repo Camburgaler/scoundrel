@@ -21,7 +21,7 @@
         "prettier-plugin-svelte": "^3.3.3"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "^3.821.0",
+        "@aws-sdk/client-s3": "^3.826.0",
         "@eslint/compat": "^1.2.5",
         "@eslint/js": "^9.28.0",
         "@sveltejs/kit": "^2.21.3",

@@ -34,7 +34,7 @@
         "dotenv": "^16.5.0",
         "express": "^5.1.0",
         "globals": "^16.2.0",
-        "pg": "^8.15.6",
+        "pg": "^8.16.2",
         "svelte": "^5.34.7",
         "svelte-check": "^4.2.2",
         "svelte-preprocess": "^6.0.3",

@@ -30,7 +30,7 @@
         "@types/express": "^5.0.3",
         "@types/node": "^24.0.15",
         "@types/pg": "^8.15.5",
-        "@sveltejs/adapter-vercel": "^6.0.0",
+        "@sveltejs/adapter-vercel": "^6.2.0",
         "dotenv": "^17.2.1",
         "express": "^5.1.0",
         "globals": "^16.4.0",

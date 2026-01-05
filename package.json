@@ -34,7 +34,7 @@
         "@types/pg": "^8",
         "dotenv": "^17",
         "express": "^5",
-        "globals": "^16",
+        "globals": "^17",
         "pg": "^8",
         "svelte": "^5",
         "svelte-check": "^4",

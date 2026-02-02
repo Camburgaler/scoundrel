@@ -30,7 +30,7 @@
         "@sveltejs/vite-plugin-svelte": "^6",
         "@tsconfig/svelte": "^5",
         "@types/express": "^5",
-        "@types/node": "^24",
+        "@types/node": "^25",
         "@types/pg": "^8",
         "dotenv": "^17",
         "express": "^5",
